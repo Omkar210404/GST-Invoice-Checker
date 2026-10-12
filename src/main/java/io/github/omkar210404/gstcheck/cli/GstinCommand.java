@@ -2,16 +2,14 @@ package io.github.omkar210404.gstcheck.cli;
 
 import io.github.omkar210404.gstcheck.config.CheckerConfig;
 import io.github.omkar210404.gstcheck.config.ConfigLoader;
-import io.github.omkar210404.gstcheck.gstin.GstinProblem;
+import io.github.omkar210404.gstcheck.gstin.GstinExplanation;
+import io.github.omkar210404.gstcheck.gstin.GstinExplanation.Status;
+import io.github.omkar210404.gstcheck.gstin.GstinExplanation.Step;
 import io.github.omkar210404.gstcheck.gstin.GstinResult;
 import io.github.omkar210404.gstcheck.gstin.GstinValidator;
 import io.github.omkar210404.gstcheck.model.CheckId;
-import io.github.omkar210404.gstcheck.model.Severity;
-import io.github.omkar210404.gstcheck.report.Notices;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -29,19 +27,6 @@ import picocli.CommandLine.Spec;
     },
     footer = {"", "Exit codes: 0 structurally valid, 1 not valid, 2 usage or input problem."})
 final class GstinCommand implements Callable<Integer> {
-
-  /** What each check looks at, phrased neutrally so it reads well next to PASS or FAIL. */
-  private static final Map<CheckId, String> LABELS = new LinkedHashMap<>();
-
-  static {
-    LABELS.put(CheckId.GSTIN_001, "15 characters, only A-Z and 0-9");
-    LABELS.put(CheckId.GSTIN_002, "State code (characters 1-2)");
-    LABELS.put(CheckId.GSTIN_003, "PAN-shaped part (characters 3-12)");
-    LABELS.put(CheckId.GSTIN_004, "Entity number (character 13)");
-    LABELS.put(CheckId.GSTIN_005, "Fixed character Z (character 14)");
-    LABELS.put(CheckId.GSTIN_006, "Check character (character 15)");
-    LABELS.put(CheckId.GSTIN_007, "Upper case with no spaces");
-  }
 
   @Spec private CommandSpec spec;
 
@@ -61,10 +46,9 @@ final class GstinCommand implements Callable<Integer> {
         config != null ? ConfigLoader.load(config) : ConfigLoader.loadExample();
     GstinResult result = new GstinValidator(checkerConfig.stateCodes()).validate(gstin);
     String value = result.normalized();
-    boolean shapeOk = !result.has(CheckId.GSTIN_001);
 
     out.println("GSTIN: " + printable(value));
-    if (shapeOk) {
+    if (!result.has(CheckId.GSTIN_001)) {
       String state = value.substring(0, 2);
       out.println();
       out.println(
@@ -81,35 +65,17 @@ final class GstinCommand implements Callable<Integer> {
     }
     out.println();
     out.println("Checks");
-    for (Map.Entry<CheckId, String> entry : LABELS.entrySet()) {
-      CheckId check = entry.getKey();
-      GstinProblem problem =
-          result.problems().stream().filter(p -> p.check() == check).findFirst().orElse(null);
-      String status;
-      if (problem != null) {
-        status = check.defaultSeverity() == Severity.ERROR ? "FAIL" : "WARN";
-      } else if (!shapeOk && check != CheckId.GSTIN_007) {
-        // Positions mean nothing when the length or characters are wrong.
-        status = "SKIP";
-      } else {
-        status = "PASS";
-      }
-      out.println("  [" + status + "] " + check.id() + "  " + entry.getValue());
-      if (problem != null) {
-        out.println("         " + printable(problem.message()));
-        out.println("         Fix: " + problem.suggestedFix());
+    for (Step step : GstinExplanation.steps(result)) {
+      out.println("  [" + step.status() + "] " + step.check().id() + "  " + step.label());
+      if (step.status() == Status.FAIL || step.status() == Status.WARN) {
+        out.println("         " + printable(step.message()));
+        out.println("         Fix: " + step.suggestedFix());
       }
     }
     out.println();
     out.println(result.structurallyValid() ? "Result: STRUCTURALLY VALID" : "Result: NOT VALID");
     out.println();
-    out.println(
-        "Note: "
-            + (result.structurallyValid()
-                ? Notices.STRUCTURAL_ONLY
-                : "This GSTIN is malformed. Remember that even one that passes is only"
-                    + " structurally valid: passing does not prove a GSTIN is registered or"
-                    + " active."));
+    out.println("Note: " + GstinExplanation.notice(result));
     out.println(
         "Note: state codes came from "
             + (config != null
