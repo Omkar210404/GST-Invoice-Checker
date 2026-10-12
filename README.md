@@ -1,13 +1,17 @@
 # gst-invoice-checker
 
-[![CI](https://github.com/Omkar210404/gst-invoice-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/Omkar210404/gst-invoice-checker/actions/workflows/ci.yml)
+[![CI](https://github.com/Omkar210404/GST-Invoice-Checker/actions/workflows/ci.yml/badge.svg)](https://github.com/Omkar210404/GST-Invoice-Checker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A Java command-line tool that checks a CSV of invoice lines against structural Indian GST rules and tells you, row by row, what is wrong and how to fix it. It runs fully offline: it never contacts the GST portal or any other service.
+A Java tool that checks a CSV of invoice lines against structural Indian GST rules and tells you, row by row, what is wrong and how to fix it. Use it from the command line, or open its local page in a browser, pick a file and press a button. It runs fully offline: it never contacts the GST portal or any other service.
 
 > **Disclaimer.** This is an offline data-quality helper, not tax advice. It does not replace the GST portal, an accountant or e-invoice validation. A clean report means these structural checks passed; it does not mean an invoice is legally compliant.
 >
 > **GSTINs.** A GSTIN that passes is structurally valid only: the format and check character are correct. That does not prove the number is registered or active. Confirm it on the official GST portal.
+
+![The local page: choose a CSV, check one GSTIN, edit the config](docs/ui-start.png)
+
+*The local page (`ui` command), served from your own computer.*
 
 ![The HTML report for the synthetic sample: counts, filters and one invoice opened to show its issue and lines](docs/report-drilldown.png)
 
@@ -17,19 +21,39 @@ A Java command-line tool that checks a CSV of invoice lines against structural I
 
 Invoice data usually reaches a filing or an ERP import as a spreadsheet export, and small mistakes in it are expensive to find late: a GSTIN with two characters swapped, an invoice number one character too long, IGST charged on a sale within the state, a tax amount that is ten rupees off. This tool finds that class of mistake before the data goes anywhere.
 
-It reads one CSV, applies 29 checks, and writes a console summary plus three report files. Each issue has a check ID, a severity, a plain-English message and a suggested fix. The exit code says whether errors were found, so it can gate a script or a CI job.
+It reads one CSV, applies 29 checks, and produces a console summary plus three report files. Each issue has a check ID, a severity, a plain-English message and a suggested fix. The exit code says whether errors were found, so it can gate a script or a CI job.
 
 ## Quick start
 
 You need Java 21 or newer. Nothing else: the Maven Wrapper in this repo downloads Maven itself.
 
 ```bash
-git clone https://github.com/Omkar210404/gst-invoice-checker.git
-cd gst-invoice-checker
+git clone https://github.com/Omkar210404/GST-Invoice-Checker.git
+cd GST-Invoice-Checker
 ./mvnw package            # Windows: mvnw.cmd package
 ```
 
 That produces `target/gst-invoice-checker-0.1.0.jar`, a single runnable JAR. Tagged versions also get the JAR attached to a GitHub release by the release workflow.
+
+### The quick way: the local page
+
+```bash
+java -jar target/gst-invoice-checker-0.1.0.jar ui
+```
+
+```text
+gst-invoice-checker is running at:
+
+  http://127.0.0.1:8765/
+
+Open that address in a browser on this computer. It is not reachable from any
+other machine, and nothing you upload leaves this computer or is saved to disk.
+Press Ctrl+C to stop.
+```
+
+Your browser opens on that address. Choose a CSV and press **Check this file**, or press **Try the synthetic sample** to see a report straight away. More under [`ui`](#ui-check-files-in-the-browser).
+
+### From the command line
 
 The repo includes a synthetic sample in [sample/](sample/). Check it:
 
@@ -122,6 +146,29 @@ Reports written:
 The process exits with code 1. The sample fails on purpose: after 17 clean lines it has one deliberately broken invoice for each check, so you can see what every check reports.
 
 ## Commands
+
+### `ui`: check files in the browser
+
+```text
+java -jar gst-invoice-checker.jar ui [--port PORT] [--no-open]
+```
+
+The page has three parts:
+
+1. **Check an invoice CSV.** Choose or drag in a file and press the button. The verdict, the counts and the full report appear on the page, with links to download `issues.csv`, `report.json` and `report.html`.
+2. **Check one GSTIN.** Type a number to see its parts and which structural checks it passes.
+3. **Config.** The rates, state codes, tolerances and column names both checks use, editable in the page. It starts as the example config; load your own YAML file or edit it in place.
+
+Adding `#sample` to the address (`http://127.0.0.1:8765/#sample`) runs the synthetic sample as soon as the page opens.
+
+| Option | Meaning |
+|---|---|
+| `-p`, `--port PORT` | Port to listen on. Default: 8765. `0` picks a free one. |
+| `--no-open` | Do not open the browser automatically. |
+
+**What "local" means here.** The tool still never contacts another machine. To show a page it has to listen for your browser, and it does that on the loopback address `127.0.0.1` only, which other computers cannot reach. It also refuses requests that are not addressed to this computer, and requires a random token that only the page it served knows, so another website open in your browser cannot use it. Uploaded files are checked in memory, never written to disk, and gone when you stop the tool. Only the eight most recent reports are kept. A build test fails if any code could open an outbound connection or listen on anything but the loopback address.
+
+The page is meant for your own machine. It is not designed to be exposed on a network, and it is not available through the Docker image.
 
 ### `check`: validate a file
 
@@ -370,6 +417,7 @@ flowchart LR
 | `rules` | The `Rule` interface, one small class per rule, and the engine |
 | `report` | The four report writers, all fed from one `ReportData` |
 | `sample` | The synthetic sample generator |
+| `ui` | The local page: a loopback-only server and one HTML file |
 
 ### Why BigDecimal and never double
 
@@ -386,7 +434,7 @@ So amounts are parsed from the CSV text into `BigDecimal`, the expected tax is c
 | Jackson (databind, YAML) | The JSON report and the YAML config with one library |
 | JUnit 5, jqwik | Tests only |
 
-The HTML report uses no template engine: it is one resource file with a few `{{PLACEHOLDER}}` markers.
+The HTML report uses no template engine: it is one resource file with a few `{{PLACEHOLDER}}` markers. The local page uses no web framework either: it is served by the small HTTP server that ships inside the JDK, so it adds no dependency.
 
 ## Adding a rule
 
@@ -429,12 +477,13 @@ Rules do no I/O and must not throw on bad data. If a value the rule needs is mis
 ./mvnw test -Dgolden.update=true   # regenerate golden files after an intended report change
 ```
 
-`verify` is what CI runs. On 12 October 2026 it ran 350 tests with no failures and SpotBugs reported no bugs.
+`verify` is what CI runs. On 12 October 2026 it ran 374 tests with no failures and SpotBugs reported no bugs.
 
 - **Unit tests** for every rule, including a wrong check character, an unknown state code, 16 versus 17 character invoice numbers, differences exactly on and just over the rounding tolerance, and intra-state versus inter-state tax.
 - **Property tests** (jqwik) throw thousands of arbitrary strings at the GSTIN validator and the number parser to show they never throw, and confirm that every single-character change to a valid GSTIN is rejected.
 - **Golden-file tests** compare all four reports for a fixed input against checked-in files in [src/test/resources/golden](src/test/resources/golden).
-- **A no-network test** fails the build if production code refers to networking classes or the HTML template refers to a URL.
+- **Local page tests** drive the `ui` server over real HTTP on a free loopback port: uploads, error messages, the token check and report downloads.
+- **A no-network test** fails the build if any code could open an outbound connection, if code outside the `ui` package mentions networking at all, if the `ui` server could listen on anything but the loopback address, or if either HTML file refers to a URL.
 
 **Formatting** is enforced by Spotless with google-java-format; the build fails on unformatted code.
 
@@ -474,6 +523,7 @@ Everything in [sample/](sample/) is generated by the tool.
 - **Line level only.** Invoice-level totals, round-off lines, credit notes and debit notes are not handled.
 - **Date ambiguity.** `dd-MM-yyyy` and `MM-dd-yyyy` cannot be told apart; configure one.
 - **UTF-8 input only.**
+- **The local page is single-user.** It is for one person on their own computer: no accounts, no saved history, uploads up to 64 MB.
 - **Size.** The whole file is held in memory. The largest file I have run is 100,000 lines (22 MB), which took 9.9 seconds on a laptop. Its HTML report was 80 MB and its JSON report 116 MB; I have not tried opening an HTML report that large in a browser. For big files, rely on `issues.csv`.
 - **The example rate list and state list are unverified examples.** See Configuration.
 - **Docker and the GitHub workflows** were written on a machine without Docker and before the repository was pushed. Treat the first CI run as their test.

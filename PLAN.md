@@ -260,4 +260,5 @@ These are the places where I would rather ask than guess.
 - **google-java-format is pinned to 1.36.1.** Version 1.37.0 would not run on JDK 21 here.
 - **Synthetic GSTINs use `X` as the fourth PAN letter** (unsure item 9). The README warning about coincidental matches stays.
 - **Checksum vectors** (unsure item 1): a hand-worked example on the dummy body `27AAAAA0000A1Z`, exhaustive single-character mutation tests, and property tests. No real GSTIN is in the repository.
+- **Decision B was reversed after the first demo.** A read-only report with no way to upload a file was not usable, so a `ui` command was added. It serves one page from a loopback-only server built on the HTTP server inside the JDK: no new dependency and no outbound connections. The "no network access" rule became "never contacts another machine", and the no-network test was rewritten to enforce exactly that.
 - **Not verified locally:** the Dockerfile and both GitHub workflows. Docker is not installed on the build machine and the repository had not been pushed.
