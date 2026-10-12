@@ -103,7 +103,13 @@ final class GstinCommand implements Callable<Integer> {
     out.println();
     out.println(result.structurallyValid() ? "Result: STRUCTURALLY VALID" : "Result: NOT VALID");
     out.println();
-    out.println("Note: " + Notices.STRUCTURAL_ONLY);
+    out.println(
+        "Note: "
+            + (result.structurallyValid()
+                ? Notices.STRUCTURAL_ONLY
+                : "This GSTIN is malformed. Remember that even one that passes is only"
+                    + " structurally valid: passing does not prove a GSTIN is registered or"
+                    + " active."));
     out.println(
         "Note: state codes came from "
             + (config != null

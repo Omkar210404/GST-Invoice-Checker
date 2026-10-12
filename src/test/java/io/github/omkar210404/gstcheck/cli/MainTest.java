@@ -100,7 +100,11 @@ class MainTest {
             HEADER + CLEAN_ROW.replace(Fixtures.BUYER_27, Fixtures.BUYER_27.toLowerCase()));
     assertEquals(0, check(file));
     assertTrue(out.toString().contains("PASSED - no errors, 1 warning(s)"));
+    assertFalse(out.toString().contains("Strict mode"));
     assertEquals(1, check(file, "--strict"));
+    assertTrue(
+        out.toString().contains("Strict mode: warnings count as failures"),
+        "the console must explain why a run with no errors exits 1");
   }
 
   @Test
@@ -204,6 +208,8 @@ class MainTest {
     assertEquals(1, run("gstin", wrong));
     String text = out.toString();
     assertTrue(text.contains("Result: NOT VALID"));
+    assertTrue(text.contains("This GSTIN is malformed"));
+    assertTrue(text.contains("does not prove a GSTIN is registered or active"));
     assertTrue(text.contains("[FAIL] GSTIN-006"));
     assertTrue(text.contains("Fix:"));
     assertTrue(text.contains("[PASS] GSTIN-002"));

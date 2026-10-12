@@ -113,7 +113,15 @@ final class CheckCommand implements Callable<Integer> {
       throw new InputProblemException("Could not write reports to " + outDir + ": " + e, e);
     }
 
+    boolean failedOnWarnings =
+        strict && report.summary().errors() == 0 && report.summary().warnings() > 0;
     out.print(ConsoleReport.render(report, maxIssues));
+    if (failedOnWarnings) {
+      out.println();
+      out.println(
+          "Strict mode: warnings count as failures, so the exit code is 1 although there are"
+              + " no errors.");
+    }
     out.println();
     out.println("Reports written:");
     out.println("  " + display(issuesCsv));
