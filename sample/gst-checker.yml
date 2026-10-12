@@ -1,0 +1,98 @@
+# gst-invoice-checker configuration (EXAMPLE)
+#
+# This file decides what the tool accepts. Nothing in it is tax advice.
+# The rate list and the state list below are EXAMPLES. Rates and codes change.
+# Verify both against official GST notifications before relying on a report.
+
+# The financial year invoice dates must fall in: 1 April 2026 to 31 March 2027.
+financial_year: "2026-27"
+
+# Date patterns accepted in invoice_date, tried in this order.
+# Use only one of dd-MM-yyyy and MM-dd-yyyy: the tool cannot tell them apart.
+date_formats:
+  - "yyyy-MM-dd"
+  - "dd-MM-yyyy"
+  - "dd/MM/yyyy"
+
+hsn:
+  # Allowed number of digits in hsn_or_sac.
+  allowed_lengths: [4, 6, 8]
+
+rates:
+  # EXAMPLE ONLY - NOT AUTHORITATIVE.
+  # Tax rates in percent that the tool will accept without raising RATE-001.
+  # GST rates change. Replace this list with the rates that apply to your
+  # goods and services, verified against official GST rate notifications.
+  allowed_slabs: [0, 0.25, 3, 5, 12, 18, 28, 40]
+
+# Rounding tolerances in rupees. A difference equal to the tolerance passes.
+# Raise these if your invoices round tax to whole rupees.
+tolerance:
+  tax_amount: "0.01"       # tax vs taxable_value x rate
+  line_total: "0.01"       # line_total vs taxable_value + taxes + cess
+  quantity_price: "0.01"   # taxable_value vs quantity x unit_price
+
+# EXAMPLE ONLY - verify against the official list of GST state codes.
+# Keys must be quoted so the leading zero is kept.
+# utgst: true marks a territory that charges UTGST where a state charges SGST.
+# It only changes the wording of messages; UTGST still goes in the sgst column.
+states:
+  "01": { name: "Jammu and Kashmir" }
+  "02": { name: "Himachal Pradesh" }
+  "03": { name: "Punjab" }
+  "04": { name: "Chandigarh", utgst: true }
+  "05": { name: "Uttarakhand" }
+  "06": { name: "Haryana" }
+  "07": { name: "Delhi" }
+  "08": { name: "Rajasthan" }
+  "09": { name: "Uttar Pradesh" }
+  "10": { name: "Bihar" }
+  "11": { name: "Sikkim" }
+  "12": { name: "Arunachal Pradesh" }
+  "13": { name: "Nagaland" }
+  "14": { name: "Manipur" }
+  "15": { name: "Mizoram" }
+  "16": { name: "Tripura" }
+  "17": { name: "Meghalaya" }
+  "18": { name: "Assam" }
+  "19": { name: "West Bengal" }
+  "20": { name: "Jharkhand" }
+  "21": { name: "Odisha" }
+  "22": { name: "Chhattisgarh" }
+  "23": { name: "Madhya Pradesh" }
+  "24": { name: "Gujarat" }
+  "26": { name: "Dadra and Nagar Haveli and Daman and Diu", utgst: true }
+  "27": { name: "Maharashtra" }
+  "29": { name: "Karnataka" }
+  "30": { name: "Goa" }
+  "31": { name: "Lakshadweep", utgst: true }
+  "32": { name: "Kerala" }
+  "33": { name: "Tamil Nadu" }
+  "34": { name: "Puducherry" }
+  "35": { name: "Andaman and Nicobar Islands", utgst: true }
+  "36": { name: "Telangana" }
+  "37": { name: "Andhra Pradesh" }
+  "38": { name: "Ladakh", utgst: true }
+  # Codes that are not listed above are rejected (GSTIN-002, POS-001).
+  # Add any other code your data legitimately uses, for example older codes
+  # or special codes, after checking what it means.
+
+# Groups of state codes to treat as ONE territory when deciding whether a
+# supply is intra-state (CGST + SGST/UTGST) or inter-state (IGST).
+# Empty by default: the tool does not guess mergers or renumbering.
+# Every code used here must also be listed under states.
+# Example: equivalent_state_codes: [["25", "26"]]
+equivalent_state_codes: []
+
+# Map the tool's column names to the headers in your file.
+# Only list the ones that differ. Example:
+#   columns:
+#     invoice_no: "Bill No"
+#     taxable_value: "Taxable Amt"
+columns: {}
+
+checks:
+  # Check IDs to switch off entirely. Example: ["MATH-003"]
+  disabled: []
+  # Change a check's severity to "error" or "warning". Example: { "MATH-005": "error" }
+  severity: {}
