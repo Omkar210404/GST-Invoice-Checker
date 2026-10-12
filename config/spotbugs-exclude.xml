@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusions. Keep this list short and explain every entry.
+-->
+<FindBugsFilter>
+  <!--
+    Records in these packages copy every collection to an immutable one in their compact
+    constructor (List.copyOf, Map.copyOf, Set.copyOf), so the accessor cannot leak mutable state.
+    SpotBugs cannot see that and reports EI_EXPOSE_REP on the generated accessors.
+  -->
+  <Match>
+    <Or>
+      <Package name="io.github.omkar210404.gstcheck.config"/>
+      <Package name="io.github.omkar210404.gstcheck.report"/>
+      <Package name="io.github.omkar210404.gstcheck.gstin"/>
+    </Or>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+</FindBugsFilter>

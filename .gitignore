@@ -1,5 +1,6 @@
 # Build output
 target/
+.jqwik-database
 
 # Real invoice data must never be committed. Only the synthetic sample is kept.
 *.csv
