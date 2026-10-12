@@ -2,7 +2,7 @@
 
 A Java 21 command-line tool that checks a CSV of invoice lines against structural Indian GST rules and writes an error report. Fully offline. A data-quality helper, not tax advice.
 
-Status: **plan only, awaiting approval. No code written.**
+Status: **approved on 12 October 2026 and built.** The plan below is kept as written. What changed during the build is listed at the end.
 
 ## 1. Environment (inspected 2026-10-12)
 
@@ -249,3 +249,15 @@ These are the places where I would rather ask than guess.
 | A user reads "valid" as "registered" | The structural-only wording appears in every output, not just the README. |
 | Example rates or state codes go stale | Config only, labelled example, verify comment, nothing in code or README prose. |
 | Golden files hide a wrong answer | Small fixtures, reviewed by hand, with rule unit tests asserting the same cases independently. |
+
+## 16. What changed during the build
+
+- **Decisions A to E** were taken as recommended: Maven Wrapper committed, CLI only, no built-in config fallback for `check`, tolerance `0.01`, owner `Omkar210404`.
+- **`union_territory` became `utgst`.** Some union territories charge SGST, so the flag now says what it controls: whether messages say UTGST instead of SGST.
+- **A thirteenth rule, `DataQualityRule`,** owns DATA-001 and DATA-002. It was in the checks list but missing from the list of rule classes.
+- **Console messages are wrapped,** not shortened, and `--max-issues` was added to control how many are listed.
+- **`issues.csv` guards against spreadsheet formula injection.** Not in the plan; added because the file echoes values from the input.
+- **google-java-format is pinned to 1.36.1.** Version 1.37.0 would not run on JDK 21 here.
+- **Synthetic GSTINs use `X` as the fourth PAN letter** (unsure item 9). The README warning about coincidental matches stays.
+- **Checksum vectors** (unsure item 1): a hand-worked example on the dummy body `27AAAAA0000A1Z`, exhaustive single-character mutation tests, and property tests. No real GSTIN is in the repository.
+- **Not verified locally:** the Dockerfile and both GitHub workflows. Docker is not installed on the build machine and the repository had not been pushed.
