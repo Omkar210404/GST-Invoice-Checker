@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.omkar210404.gstcheck.testutil.Fixtures;
+import io.github.omkar210404.gstcheck.ui.LocalServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -270,6 +271,28 @@ class MainTest {
     String a = Files.readString(dir.resolve("a/sample-invoices.csv"));
     assertEquals(a, Files.readString(dir.resolve("b/sample-invoices.csv")));
     assertFalse(a.equals(Files.readString(dir.resolve("c/sample-invoices.csv"))));
+  }
+
+  // --- ui ---
+
+  @Test
+  void uiExitsTwoWhenThePortIsAlreadyInUse() throws IOException {
+    try (LocalServer running = LocalServer.start(0, CLOCK, "TEST")) {
+      assertEquals(2, run("ui", "--no-open", "--port", String.valueOf(running.port())));
+      assertTrue(err.toString().contains("try another one with --port"));
+    }
+  }
+
+  @Test
+  void uiRejectsAnImpossiblePort() {
+    assertEquals(2, run("ui", "--no-open", "--port", "70000"));
+    assertEquals(2, run("ui", "--no-open", "--port", "abc"));
+  }
+
+  @Test
+  void uiHelpSaysThePageIsLocalOnly() {
+    assertEquals(0, run("ui", "--help"));
+    assertTrue(out.toString().contains("127.0.0.1 only"));
   }
 
   // --- top level ---

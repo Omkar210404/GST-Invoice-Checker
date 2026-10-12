@@ -36,8 +36,18 @@ public final class HtmlReport {
             "DISCLAIMER", escapeHtml(data.disclaimer()),
             "REPORT_JSON", escapeJsonForScript(JsonReport.renderCompact(data)));
 
+    return fill(TEMPLATE_RESOURCE, values);
+  }
+
+  /**
+   * Loads a template from the classpath and fills in its {@code {{PLACEHOLDER}}} markers. Values
+   * are inserted as given, so the caller must escape them for where they land.
+   *
+   * @throws IllegalStateException if the template is missing or names an unknown placeholder
+   */
+  public static String fill(String resource, Map<String, String> values) {
     // One pass over the template, so a value that itself contains "{{...}}" is not expanded again.
-    Matcher matcher = PLACEHOLDER.matcher(template());
+    Matcher matcher = PLACEHOLDER.matcher(template(resource));
     StringBuilder out = new StringBuilder();
     while (matcher.find()) {
       String value = values.get(matcher.group(1));
@@ -50,18 +60,19 @@ public final class HtmlReport {
     return out.toString();
   }
 
-  private static String template() {
-    try (InputStream in = HtmlReport.class.getResourceAsStream(TEMPLATE_RESOURCE)) {
+  private static String template(String resource) {
+    try (InputStream in = HtmlReport.class.getResourceAsStream(resource)) {
       if (in == null) {
-        throw new IllegalStateException("Missing resource " + TEMPLATE_RESOURCE);
+        throw new IllegalStateException("Missing resource " + resource);
       }
       return new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\r\n", "\n");
     } catch (IOException e) {
-      throw new IllegalStateException("Could not read resource " + TEMPLATE_RESOURCE, e);
+      throw new IllegalStateException("Could not read resource " + resource, e);
     }
   }
 
-  static String escapeHtml(String text) {
+  /** Escapes text for use in HTML content or a quoted attribute. */
+  public static String escapeHtml(String text) {
     StringBuilder out = new StringBuilder(text.length() + 16);
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);

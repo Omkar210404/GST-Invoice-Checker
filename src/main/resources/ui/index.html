@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="gstc-token" content="{{TOKEN}}">
+<title>GST invoice checker</title>
+<style>
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --panel-2: #1c232d;
+  --line: #2a323d;
+  --text: #e6edf3;
+  --muted: #8b98a8;
+  --accent: #58a6ff;
+  --error: #ff7b72;
+  --error-bg: #3d1a1d;
+  --warning: #e3b341;
+  --warning-bg: #3a2e12;
+  --ok: #56d364;
+  --ok-bg: #12301c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 13px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 13px; }
+.notice {
+  margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  background: var(--panel); border-radius: 6px; font-size: 14px;
+}
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-top: 20px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.drop {
+  display: block; border: 2px dashed var(--line); border-radius: 10px; padding: 26px 16px; text-align: center;
+  cursor: pointer; background: var(--panel-2); transition: border-color .12s, background .12s;
+}
+.drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); background: #1a2533; }
+.drop strong { display: block; font-size: 16px; }
+.drop span { color: var(--muted); font-size: 13px; }
+.drop .picked { color: var(--ok); font-size: 14px; margin-top: 8px; display: block; overflow-wrap: anywhere; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+label.field { color: var(--muted); font-size: 13px; display: inline-flex; gap: 8px; align-items: center; }
+input[type="text"], input[type="date"], textarea {
+  font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px;
+}
+input[type="text"] { flex: 1; min-width: 220px; text-transform: uppercase; }
+input[type="date"] { color-scheme: dark; }
+textarea { width: 100%; min-height: 300px; resize: vertical; font-family: ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.45; white-space: pre; }
+button, a.button {
+  font: inherit; cursor: pointer; border-radius: 6px; padding: 8px 16px; border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--text); text-decoration: none; display: inline-block;
+}
+button:hover:not(:disabled), a.button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #06121f; font-weight: 700; }
+button.primary:hover:not(:disabled) { filter: brightness(1.1); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.error-box { margin-top: 14px; padding: 12px 14px; border-radius: 6px; background: var(--error-bg); color: var(--error); border: 1px solid #6b2a2e; overflow-wrap: anywhere; }
+.busy { color: var(--muted); font-size: 14px; }
+.verdict { display: inline-block; padding: 5px 14px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+.verdict.fail { background: var(--error-bg); color: var(--error); }
+.verdict.pass { background: var(--ok-bg); color: var(--ok); }
+.verdict.warn { background: var(--warning-bg); color: var(--warning); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.tile .num { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.tile.error .num { color: var(--error); }
+.tile.warning .num { color: var(--warning); }
+.tile.ok .num { color: var(--ok); }
+iframe { width: 100%; height: 82vh; min-height: 520px; border: 1px solid var(--line); border-radius: 8px; margin-top: 16px; background: var(--bg); }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.badge.PASS { background: var(--ok-bg); color: var(--ok); }
+.badge.FAIL { background: var(--error-bg); color: var(--error); }
+.badge.WARN { background: var(--warning-bg); color: var(--warning); }
+.badge.SKIP { background: var(--panel-2); color: var(--muted); }
+.fix { color: var(--muted); font-size: 13px; }
+details > summary { cursor: pointer; font-weight: 600; }
+details .inner { margin-top: 12px; }
+code { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 13px; }
+footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+footer p { margin: 0 0 8px; }
+footer strong { color: var(--text); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>GST invoice checker</h1>
+    <div class="sub">Running on this computer only (127.0.0.1) &middot; version {{TOOL_VERSION}} &middot; nothing you upload leaves this machine or is saved to disk</div>
+    <div class="notice" role="note"><strong>Not tax advice.</strong> {{DISCLAIMER}}</div>
+  </header>
+
+  <noscript><div class="error-box">This page needs JavaScript. You can still use the command line: <code>gst-invoice-checker check FILE</code>.</div></noscript>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="h-check">
+      <h2 id="h-check">1. Check an invoice CSV</h2>
+      <p class="hint">Pick your file, press the button, and the report appears below. New here? Press <em>Try the synthetic sample</em>.</p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" class="visually-hidden" accept=".csv,text/csv">
+        <strong>Choose a CSV file</strong>
+        <span>or drag and drop it here</span>
+        <span class="picked" id="picked" hidden></span>
+      </label>
+      <div class="row">
+        <label class="field">Treat today as <input type="date" id="as-of" value="{{TODAY}}"></label>
+      </div>
+      <div class="row">
+        <button type="button" class="primary" id="check" disabled>Check this file</button>
+        <button type="button" id="sample">Try the synthetic sample</button>
+        <span class="busy" id="busy" hidden>Checking&hellip;</span>
+      </div>
+      <div class="error-box" id="check-error" role="alert" hidden></div>
+      <details style="margin-top:14px">
+        <summary>Which columns does the file need?</summary>
+        <div class="inner hint">
+          Required: <code>invoice_no</code> <code>invoice_date</code> <code>supplier_gstin</code>
+          <code>place_of_supply_state_code</code> <code>hsn_or_sac</code> <code>taxable_value</code>
+          <code>rate</code> <code>line_total</code>.<br>
+          Optional: <code>buyer_gstin</code> <code>description</code> <code>quantity</code> <code>unit</code>
+          <code>unit_price</code> <code>cgst</code> <code>sgst</code> <code>igst</code> <code>cess</code>
+          <code>supplier_name</code> <code>buyer_name</code>.<br>
+          Different headers in your file? Map them under <code>columns</code> in the Config box below.
+        </div>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="h-gstin">
+      <h2 id="h-gstin">2. Check one GSTIN</h2>
+      <p class="hint">Type a GSTIN to see each part and which structural checks it passes.</p>
+      <form id="gstin-form" class="row" style="margin-top:0">
+        <input type="text" id="gstin" maxlength="60" placeholder="15-character GSTIN" aria-label="GSTIN" autocomplete="off" spellcheck="false">
+        <button type="submit" class="primary">Check GSTIN</button>
+      </form>
+      <div class="error-box" id="gstin-error" role="alert" hidden></div>
+      <div id="gstin-result" hidden></div>
+    </section>
+  </div>
+
+  <section class="card" id="result" aria-labelledby="h-result" hidden>
+    <h2 id="h-result">Result</h2>
+    <div class="sub" id="result-meta"></div>
+    <div style="margin-top:12px"><span id="verdict"></span></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="row">
+      <a class="button" id="open-report" target="_blank" rel="noopener">Open the full report in a new tab</a>
+      <a class="button" id="dl-csv">Download issues.csv</a>
+      <a class="button" id="dl-json">Download report.json</a>
+      <a class="button" id="dl-html">Download report.html</a>
+    </div>
+    <iframe id="report-frame" title="Full report"></iframe>
+  </section>
+
+  <section class="card" aria-labelledby="h-config">
+    <details id="config-details">
+      <summary id="h-config">3. Config: tax rates, state codes, tolerance, column names</summary>
+      <div class="inner">
+        <p class="hint">
+          This is the config both checks above use. <strong>The rate list and state list are examples.</strong>
+          GST rates change: verify them against official GST notifications and edit them here before
+          relying on a result. Your edits stay in this page until you reload it.
+        </p>
+        <textarea id="config" spellcheck="false" aria-label="Config in YAML"></textarea>
+        <div class="row">
+          <label class="button" style="cursor:pointer">
+            Load a YAML file
+            <input type="file" id="config-file" class="visually-hidden" accept=".yml,.yaml,text/yaml">
+          </label>
+          <button type="button" id="config-reset">Reset to example</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p><strong>Disclaimer.</strong> {{DISCLAIMER}}</p>
+    <p><strong>GSTINs.</strong> {{STRUCTURAL_NOTICE}}</p>
+    <p><strong>Privacy.</strong> This page is served by the tool on your own computer and accepts connections from this computer only. It makes no requests to any other machine. Uploaded files are checked in memory and are gone when you stop the tool.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var token = document.querySelector('meta[name="gstc-token"]').getAttribute('content');
+  function $(id) { return document.getElementById(id); }
+  // Everything that came from a file or from the server is written with textContent.
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined && text !== null) { node.textContent = String(text); }
+    return node;
+  }
+  function clear(node) { while (node.firstChild) { node.removeChild(node.firstChild); } }
+  function show(node, visible) { node.hidden = !visible; }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  function post(path, payload) {
+    var headers = { 'Content-Type': 'application/json' };
+    headers['X-GSTC-Token'] = token;
+    return fetch(path, { method: 'POST', headers: headers, body: JSON.stringify(payload) })
+      .then(function (response) {
+        return response.json().then(function (body) {
+          if (!response.ok) { throw new Error(body.error || ('The request failed (' + response.status + ').')); }
+          return body;
+        });
+      });
+  }
+  function getText(path) {
+    return fetch(path).then(function (response) {
+      if (!response.ok) { throw new Error('Could not load ' + path + ' (' + response.status + ').'); }
+      return response.text();
+    });
+  }
+  function fail(box, error) {
+    box.textContent = error && error.message ? error.message : String(error);
+    show(box, true);
+  }
+
+  // --- config ---
+  var exampleConfig = '';
+  var configReady = getText('/api/example-config').then(function (text) {
+    exampleConfig = text;
+    $('config').value = text;
+  });
+  $('config-reset').addEventListener('click', function () { $('config').value = exampleConfig; });
+  $('config-file').addEventListener('change', function (event) {
+    var file = event.target.files[0];
+    if (file) { file.text().then(function (text) { $('config').value = text; }); }
+    event.target.value = '';
+  });
+
+  // --- file checking ---
+  var chosen = null;
+  function choose(file) {
+    chosen = file || null;
+    $('check').disabled = !chosen;
+    var picked = $('picked');
+    if (chosen) {
+      picked.textContent = 'Selected: ' + chosen.name + ' (' + Math.max(1, Math.round(chosen.size / 1024)) + ' KB)';
+    }
+    show(picked, !!chosen);
+    show($('check-error'), false);
+  }
+  $('file').addEventListener('change', function (event) { choose(event.target.files[0]); });
+  var drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function (name) {
+    drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (name) {
+    drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (event) {
+    if (event.dataTransfer && event.dataTransfer.files.length) { choose(event.dataTransfer.files[0]); }
+  });
+
+  function setBusy(busy) {
+    show($('busy'), busy);
+    $('check').disabled = busy || !chosen;
+    $('sample').disabled = busy;
+  }
+  function runCheck(name, csv) {
+    setBusy(true);
+    show($('check-error'), false);
+    return post('/api/check', { file_name: name, csv: csv, config: $('config').value, as_of: $('as-of').value })
+      .then(showResult)
+      .catch(function (error) { fail($('check-error'), error); })
+      .then(function () { setBusy(false); });
+  }
+  $('check').addEventListener('click', function () {
+    if (!chosen) { return; }
+    var file = chosen;
+    file.text()
+      .then(function (csv) { return runCheck(file.name, csv); })
+      .catch(function (error) { fail($('check-error'), error); });
+  });
+  function runSample() {
+    return getText('/api/sample')
+      .then(function (csv) { return runCheck('sample-invoices.csv (synthetic sample)', csv); })
+      .catch(function (error) { fail($('check-error'), error); });
+  }
+  $('sample').addEventListener('click', runSample);
+
+  function showResult(result) {
+    var s = result.summary;
+    $('result-meta').textContent = result.file_name + ' · financial year ' + result.financial_year +
+      ' · as of ' + result.as_of;
+    var verdict = $('verdict');
+    if (s.errors) {
+      verdict.className = 'verdict fail';
+      verdict.textContent = 'FAILED: ' + plural(s.errors, 'error') + (s.warnings ? ', ' + plural(s.warnings, 'warning') : '');
+    } else if (s.warnings) {
+      verdict.className = 'verdict warn';
+      verdict.textContent = 'PASSED with ' + plural(s.warnings, 'warning');
+    } else {
+      verdict.className = 'verdict pass';
+      verdict.textContent = s.lines ? 'PASSED: no issues found' : 'Nothing to check: the file has no data rows';
+    }
+    var tiles = $('tiles');
+    clear(tiles);
+    [['', s.lines, 'Lines checked'], ['', s.invoices, 'Invoices'],
+     [s.invoices_with_errors ? 'error' : 'ok', s.invoices_with_errors, 'Invoices with errors'],
+     [s.errors ? 'error' : 'ok', s.errors, 'Errors'],
+     [s.warnings ? 'warning' : 'ok', s.warnings, 'Warnings']].forEach(function (t) {
+      var tile = el('div', 'tile ' + t[0]);
+      tile.appendChild(el('div', 'num', t[1]));
+      tile.appendChild(el('div', 'label', t[2]));
+      tiles.appendChild(tile);
+    });
+    var base = '/result/' + encodeURIComponent(result.id) + '/';
+    $('open-report').href = base + 'report.html';
+    $('dl-csv').href = base + 'issues.csv';
+    $('dl-json').href = base + 'report.json';
+    $('dl-html').href = base + 'download-report.html';
+    $('report-frame').src = base + 'report.html';
+    show($('result'), true);
+    $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // --- single GSTIN ---
+  $('gstin-form').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var box = $('gstin-result');
+    show($('gstin-error'), false);
+    post('/api/gstin', { gstin: $('gstin').value, config: $('config').value })
+      .then(function (result) {
+        clear(box);
+        var verdict = el('span', 'verdict ' + (result.structurally_valid ? 'pass' : 'fail'),
+          result.structurally_valid ? 'STRUCTURALLY VALID' : 'NOT VALID');
+        var top = el('div');
+        top.style.marginTop = '14px';
+        top.appendChild(verdict);
+        top.appendChild(document.createTextNode('  '));
+        top.appendChild(el('span', 'mono', result.gstin || '(empty)'));
+        box.appendChild(top);
+
+        if (result.parts) {
+          var p = result.parts;
+          var parts = el('table');
+          [['Characters 1-2', p.state_code, 'State code' + (p.state_name ? ': ' + p.state_name : '')],
+           ['Characters 3-12', p.pan_part, 'PAN-shaped part'],
+           ['Character 13', p.entity_number, 'Entity number'],
+           ['Character 14', p.fixed_character, 'Fixed character'],
+           ['Character 15', p.check_character, 'Check character']].forEach(function (row) {
+            var tr = el('tr');
+            tr.appendChild(el('td', 'sub', row[0]));
+            tr.appendChild(el('td', 'mono', row[1]));
+            tr.appendChild(el('td', null, row[2]));
+            parts.appendChild(tr);
+          });
+          box.appendChild(parts);
+        }
+
+        var steps = el('table');
+        result.steps.forEach(function (step) {
+          var tr = el('tr');
+          var status = el('td');
+          status.appendChild(el('span', 'badge ' + step.status, step.status));
+          tr.appendChild(status);
+          tr.appendChild(el('td', 'mono', step.check_id));
+          var detail = el('td');
+          detail.appendChild(el('div', null, step.label));
+          if (step.message) { detail.appendChild(el('div', null, step.message)); }
+          if (step.suggested_fix) { detail.appendChild(el('div', 'fix', 'Fix: ' + step.suggested_fix)); }
+          tr.appendChild(detail);
+          steps.appendChild(tr);
+        });
+        box.appendChild(steps);
+        box.appendChild(el('p', 'hint', result.notice));
+        show(box, true);
+      })
+      .catch(function (error) { show(box, false); fail($('gstin-error'), error); });
+  });
+
+  // Opening the page with #sample at the end of the address runs the synthetic sample straight away.
+  if (window.location.hash === '#sample') { configReady.then(runSample); }
+})();
+</script>
+</body>
+</html>

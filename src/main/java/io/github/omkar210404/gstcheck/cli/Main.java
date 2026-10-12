@@ -14,13 +14,14 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 
-/** Entry point. Dispatches to the {@code check}, {@code gstin} and {@code sample} subcommands. */
+/** Entry point. Dispatches to the check, gstin, sample and ui subcommands. */
 @Command(
     name = "gst-invoice-checker",
     mixinStandardHelpOptions = true,
     versionProvider = Main.VersionProvider.class,
     description = {
-      "Checks invoice CSV data against structural Indian GST rules. Works fully offline.",
+      "Checks invoice CSV data against structural Indian GST rules. Works fully offline:",
+      "it never contacts another machine. The ui command serves a page on this computer only.",
       "",
       "This is a data-quality helper, not tax advice. A GSTIN that passes is only",
       "structurally valid; that does not prove it is registered or active."
@@ -28,9 +29,9 @@ import picocli.CommandLine.Spec;
     footer = {
       "",
       "Exit codes: 0 no errors, 1 errors found, 2 usage or input problem.",
-      "Start with:  gst-invoice-checker sample"
+      "Start with:  gst-invoice-checker sample   (or: gst-invoice-checker ui)"
     },
-    subcommands = {CheckCommand.class, GstinCommand.class, SampleCommand.class})
+    subcommands = {CheckCommand.class, GstinCommand.class, SampleCommand.class, UiCommand.class})
 public final class Main implements Runnable {
 
   private final Clock clock;
@@ -48,7 +49,8 @@ public final class Main implements Runnable {
 
   @Override
   public void run() {
-    throw new ParameterException(spec.commandLine(), "Missing command: check, gstin or sample.");
+    throw new ParameterException(
+        spec.commandLine(), "Missing command: check, gstin, sample or ui.");
   }
 
   public static void main(String[] args) {
