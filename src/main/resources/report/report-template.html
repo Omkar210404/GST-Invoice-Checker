@@ -104,7 +104,8 @@ details.invoice[open] > summary { border-bottom: 1px solid var(--line); }
 tr.has-error td:first-child { box-shadow: inset 3px 0 0 var(--error); }
 tr.has-warning td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
 .fix { color: var(--muted); font-size: 13px; margin-top: 2px; }
-.value { overflow-wrap: anywhere; }
+td.mono { white-space: nowrap; }
+td.value { white-space: normal; overflow-wrap: anywhere; min-width: 150px; }
 .empty { padding: 28px; text-align: center; color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 8px; }
 footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 footer p { margin: 0 0 8px; }
