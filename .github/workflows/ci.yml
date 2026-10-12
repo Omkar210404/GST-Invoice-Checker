@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is included because the tool reads and writes text files, and line endings and
+        # path separators are the usual way such tools break across platforms.
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # verify runs the unit, property and golden-file tests, the Spotless formatting check
+      # and SpotBugs. Any of them failing fails the build.
+      - name: Build, test, check formatting, run static analysis
+        run: ./mvnw -B -ntp verify
+
+      - name: Smoke test the runnable JAR
+        run: |
+          jar=$(ls target/gst-invoice-checker-*.jar)
+          java -jar "$jar" --version
+          java -jar "$jar" sample --dir smoke
+          # The sample contains one deliberate fault per check, so the expected exit code is 1.
+          set +e
+          java -jar "$jar" check smoke/sample-invoices.csv --config smoke/gst-checker.yml \
+            --out-dir smoke/reports --as-of 2026-10-12
+          code=$?
+          set -e
+          if [ "$code" -ne 1 ]; then
+            echo "::error::Expected exit code 1 from the sample run, got $code"
+            exit 1
+          fi
+          test -s smoke/reports/issues.csv
+          test -s smoke/reports/report.json
+          test -s smoke/reports/report.html
+
+      - name: Keep the JAR from the Linux build
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: gst-invoice-checker-jar
+          path: target/gst-invoice-checker-*.jar
+          if-no-files-found: error
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the image
+        run: docker build -t gst-invoice-checker .
+
+      # --network none proves the tool runs with no network at all.
+      - name: Run the CLI in the container with networking disabled
+        run: |
+          docker run --rm --network none gst-invoice-checker --version
+          docker run --rm --network none gst-invoice-checker gstin 27AAAAA0000A1Z2
