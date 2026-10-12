@@ -1,0 +1,435 @@
+{
+  "tool" : "gst-invoice-checker",
+  "tool_version" : "TEST",
+  "as_of" : "2026-10-12",
+  "input_file" : "golden/input.csv",
+  "config_file" : "golden/config.yml",
+  "financial_year" : "2026-27",
+  "structural_notice" : "Structurally valid only: the format and check character are correct. This does not prove the GSTIN is registered or active. Confirm it on the official GST portal.",
+  "disclaimer" : "This is an offline data-quality helper, not tax advice. It does not replace the GST portal, an accountant or e-invoice validation. A clean report means these structural checks passed; it does not mean an invoice is legally compliant.",
+  "summary" : {
+    "lines" : 9,
+    "invoices" : 8,
+    "errors" : 7,
+    "warnings" : 2,
+    "lines_with_issues" : 6,
+    "invoices_with_errors" : 5,
+    "invoices_with_issues" : 6
+  },
+  "check_counts" : [
+    {
+      "check_id" : "GSTIN-006",
+      "severity" : "error",
+      "title" : "GSTIN check character does not match",
+      "count" : 1
+    },
+    {
+      "check_id" : "GSTIN-007",
+      "severity" : "warning",
+      "title" : "GSTIN has lower-case letters or surrounding spaces",
+      "count" : 1
+    },
+    {
+      "check_id" : "INV-002",
+      "severity" : "error",
+      "title" : "Invoice number has characters that are not allowed",
+      "count" : 1
+    },
+    {
+      "check_id" : "DATE-002",
+      "severity" : "error",
+      "title" : "Invoice date is in the future",
+      "count" : 1
+    },
+    {
+      "check_id" : "HSN-001",
+      "severity" : "error",
+      "title" : "HSN/SAC is not digits only",
+      "count" : 1
+    },
+    {
+      "check_id" : "TAX-001",
+      "severity" : "error",
+      "title" : "IGST charged on an intra-state supply",
+      "count" : 2
+    },
+    {
+      "check_id" : "MATH-001",
+      "severity" : "error",
+      "title" : "Tax amount does not equal taxable value x rate",
+      "count" : 1
+    },
+    {
+      "check_id" : "MATH-003",
+      "severity" : "warning",
+      "title" : "Taxable value does not equal quantity x unit price",
+      "count" : 1
+    }
+  ],
+  "invoices" : [
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/001",
+      "invoice_date" : "2026-07-15",
+      "buyer_gstin" : "27PQRXS5678T1ZB",
+      "buyer_name" : "Golden Buyer (FICTIONAL)",
+      "place_of_supply" : "27",
+      "taxable_total" : "1450.00",
+      "tax_total" : "202.50",
+      "grand_total" : "1652.50",
+      "errors" : 0,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 2,
+          "description" : "Golden widget",
+          "hsn_or_sac" : "123456",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "90.00",
+          "sgst" : "90.00",
+          "igst" : "0.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        },
+        {
+          "line_no" : 3,
+          "description" : "Golden bolt",
+          "hsn_or_sac" : "1234",
+          "quantity" : "10",
+          "unit" : "BOX",
+          "unit_price" : "45.00",
+          "taxable_value" : "450.00",
+          "rate" : "5",
+          "cgst" : "11.25",
+          "sgst" : "11.25",
+          "igst" : "0.00",
+          "cess" : "0.00",
+          "line_total" : "472.50"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/002",
+      "invoice_date" : "2026-08-01",
+      "buyer_gstin" : "",
+      "buyer_name" : "",
+      "place_of_supply" : "24",
+      "taxable_total" : "2000.00",
+      "tax_total" : "360.00",
+      "grand_total" : "2360.00",
+      "errors" : 0,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 4,
+          "description" : "Golden service to an unregistered buyer",
+          "hsn_or_sac" : "998877",
+          "quantity" : "1",
+          "unit" : "HRS",
+          "unit_price" : "2000.00",
+          "taxable_value" : "2000.00",
+          "rate" : "18",
+          "cgst" : "",
+          "sgst" : "",
+          "igst" : "360.00",
+          "cess" : "",
+          "line_total" : "2360.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/003",
+      "invoice_date" : "2026-08-02",
+      "buyer_gstin" : "27PQRXS5678T1ZA",
+      "buyer_name" : "Golden Buyer (FICTIONAL)",
+      "place_of_supply" : "27",
+      "taxable_total" : "1000.00",
+      "tax_total" : "180.00",
+      "grand_total" : "1180.00",
+      "errors" : 1,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 5,
+          "description" : "Buyer GSTIN has a wrong check character",
+          "hsn_or_sac" : "123456",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "90.00",
+          "sgst" : "90.00",
+          "igst" : "0.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/004",
+      "invoice_date" : "2026-08-03",
+      "buyer_gstin" : "27PQRXS5678T1ZB",
+      "buyer_name" : "Golden Buyer (FICTIONAL)",
+      "place_of_supply" : "27",
+      "taxable_total" : "1000.00",
+      "tax_total" : "180.00",
+      "grand_total" : "1180.00",
+      "errors" : 1,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 6,
+          "description" : "IGST on an intra-state supply",
+          "hsn_or_sac" : "123456",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "0.00",
+          "sgst" : "0.00",
+          "igst" : "180.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/005",
+      "invoice_date" : "2026-08-04",
+      "buyer_gstin" : "24LMNXO2468P1ZJ",
+      "buyer_name" : "Other Buyer (FICTIONAL)",
+      "place_of_supply" : "24",
+      "taxable_total" : "1000.00",
+      "tax_total" : "170.00",
+      "grand_total" : "1170.00",
+      "errors" : 1,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 7,
+          "description" : "Tax is 10.00 short",
+          "hsn_or_sac" : "123456",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "0.00",
+          "sgst" : "0.00",
+          "igst" : "170.00",
+          "cess" : "0.00",
+          "line_total" : "1170.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/006",
+      "invoice_date" : "2026-08-05",
+      "buyer_gstin" : "27PQRXS5678T1ZB",
+      "buyer_name" : "Golden Buyer (FICTIONAL)",
+      "place_of_supply" : "27",
+      "taxable_total" : "1000.00",
+      "tax_total" : "180.00",
+      "grand_total" : "1180.00",
+      "errors" : 0,
+      "warnings" : 2,
+      "lines" : [
+        {
+          "line_no" : 8,
+          "description" : "Warnings only: lower-case GSTIN and a discount",
+          "hsn_or_sac" : "123456",
+          "quantity" : "3",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "90.00",
+          "sgst" : "90.00",
+          "igst" : "0.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "supplier_name" : "Golden Supplier (FICTIONAL)",
+      "invoice_no" : "=1+1",
+      "invoice_date" : "2026-12-25",
+      "buyer_gstin" : "27PQRXS5678T1ZB",
+      "buyer_name" : "Golden Buyer (FICTIONAL)",
+      "place_of_supply" : "27",
+      "taxable_total" : "1000.00",
+      "tax_total" : "180.00",
+      "grand_total" : "1180.00",
+      "errors" : 3,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 9,
+          "description" : "<script>alert(\"x\")</script> & 'quotes', {{TOOL}}",
+          "hsn_or_sac" : "84A1",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "90.00",
+          "sgst" : "90.00",
+          "igst" : "0.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        }
+      ]
+    },
+    {
+      "supplier_gstin" : "04GHIXJ1357K1ZR",
+      "supplier_name" : "Territory Supplier (FICTIONAL)",
+      "invoice_no" : "G/26-27/008",
+      "invoice_date" : "2026-09-01",
+      "buyer_gstin" : "04RSTXU9753V1Z5",
+      "buyer_name" : "Territory Buyer (FICTIONAL)",
+      "place_of_supply" : "04",
+      "taxable_total" : "1000.00",
+      "tax_total" : "180.00",
+      "grand_total" : "1180.00",
+      "errors" : 1,
+      "warnings" : 0,
+      "lines" : [
+        {
+          "line_no" : 10,
+          "description" : "IGST inside a UTGST territory",
+          "hsn_or_sac" : "123456",
+          "quantity" : "2",
+          "unit" : "NOS",
+          "unit_price" : "500.00",
+          "taxable_value" : "1000.00",
+          "rate" : "18",
+          "cgst" : "0.00",
+          "sgst" : "0.00",
+          "igst" : "180.00",
+          "cess" : "0.00",
+          "line_total" : "1180.00"
+        }
+      ]
+    }
+  ],
+  "issues" : [
+    {
+      "line_no" : 5,
+      "invoice_no" : "G/26-27/003",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "GSTIN-006",
+      "severity" : "error",
+      "field" : "buyer_gstin",
+      "value" : "27PQRXS5678T1ZA",
+      "message" : "The check character is 'A' but the first 14 characters give 'B'. One or more characters are probably mistyped.",
+      "suggested_fix" : "Re-enter the whole GSTIN from the source document. Do not just change the last character: the mistake is usually somewhere in the first 14."
+    },
+    {
+      "line_no" : 6,
+      "invoice_no" : "G/26-27/004",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "TAX-001",
+      "severity" : "error",
+      "field" : "igst",
+      "value" : "cgst=0.00, sgst=0.00, igst=180.00",
+      "message" : "IGST is charged but the supply is intra-state (supplier state 27 Maharashtra, place of supply 27 Maharashtra).",
+      "suggested_fix" : "Charge CGST + SGST in equal halves, or correct the place of supply. SEZ and export supplies are not modelled by this tool."
+    },
+    {
+      "line_no" : 7,
+      "invoice_no" : "G/26-27/005",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "MATH-001",
+      "severity" : "error",
+      "field" : "rate",
+      "value" : "170.00",
+      "message" : "Tax charged is 170.00 but 1000.00 x 18% is 180.00 (difference 10.00, tolerance 0.01).",
+      "suggested_fix" : "Recalculate the tax, or correct the rate or taxable value. If your invoices round tax differently, raise tolerance.tax_amount in the config."
+    },
+    {
+      "line_no" : 8,
+      "invoice_no" : "G/26-27/006",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "GSTIN-007",
+      "severity" : "warning",
+      "field" : "buyer_gstin",
+      "value" : "27pqrxs5678t1zb",
+      "message" : "The GSTIN has lower-case letters or surrounding spaces. It was checked as '27PQRXS5678T1ZB'.",
+      "suggested_fix" : "Store GSTINs in upper case with no spaces."
+    },
+    {
+      "line_no" : 8,
+      "invoice_no" : "G/26-27/006",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "MATH-003",
+      "severity" : "warning",
+      "field" : "taxable_value",
+      "value" : "1000.00",
+      "message" : "Taxable value is 1000.00 but 3 x 500.00 is 1500.00.",
+      "suggested_fix" : "Check quantity, unit price and taxable value. If the difference is a discount, this warning can be ignored or MATH-003 disabled in the config."
+    },
+    {
+      "line_no" : 9,
+      "invoice_no" : "=1+1",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "DATE-002",
+      "severity" : "error",
+      "field" : "invoice_date",
+      "value" : "2026-12-25",
+      "message" : "The invoice date 2026-12-25 is after 2026-10-12.",
+      "suggested_fix" : "Check the year and whether day and month are swapped."
+    },
+    {
+      "line_no" : 9,
+      "invoice_no" : "=1+1",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "HSN-001",
+      "severity" : "error",
+      "field" : "hsn_or_sac",
+      "value" : "84A1",
+      "message" : "The HSN/SAC code '84A1' contains something other than digits.",
+      "suggested_fix" : "Enter the code as digits only, with no spaces, dots or letters."
+    },
+    {
+      "line_no" : 9,
+      "invoice_no" : "=1+1",
+      "supplier_gstin" : "27ABCXD1234E1ZY",
+      "check_id" : "INV-002",
+      "severity" : "error",
+      "field" : "invoice_no",
+      "value" : "=1+1",
+      "message" : "The invoice number contains characters that are not allowed: '=', '+'.",
+      "suggested_fix" : "Use only letters, digits, '/' and '-' in invoice numbers."
+    },
+    {
+      "line_no" : 10,
+      "invoice_no" : "G/26-27/008",
+      "supplier_gstin" : "04GHIXJ1357K1ZR",
+      "check_id" : "TAX-001",
+      "severity" : "error",
+      "field" : "igst",
+      "value" : "cgst=0.00, sgst=0.00, igst=180.00",
+      "message" : "IGST is charged but the supply is intra-state (supplier state 04 Chandigarh, place of supply 04 Chandigarh).",
+      "suggested_fix" : "Charge CGST + UTGST in equal halves (enter UTGST in the sgst column), or correct the place of supply. SEZ and export supplies are not modelled by this tool."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# Config for the golden-file tests. Test data only: not a statement about real GST rates.
+financial_year: "2026-27"
+rates:
+  allowed_slabs: [0, 5, 18]
+states:
+  "04": { name: "Chandigarh", utgst: true }
+  "24": { name: "Gujarat" }
+  "27": { name: "Maharashtra" }

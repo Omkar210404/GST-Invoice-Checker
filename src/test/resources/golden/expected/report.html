@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- This page loads nothing from the network: no scripts, styles, fonts or images. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>GST invoice check - golden/input.csv</title>
+<style>
+:root {
+  --bg: #0e1116;
+  --panel: #161b22;
+  --panel-2: #1c232d;
+  --line: #2a323d;
+  --text: #e6edf3;
+  --muted: #8b98a8;
+  --accent: #58a6ff;
+  --error: #ff7b72;
+  --error-bg: #3d1a1d;
+  --warning: #e3b341;
+  --warning-bg: #3a2e12;
+  --ok: #56d364;
+  --ok-bg: #12301c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.meta b { color: var(--text); font-weight: 600; }
+.mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 13px; }
+.notice {
+  margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  background: var(--panel); border-radius: 6px; color: var(--text);
+}
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.tile .num { font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.tile.error .num { color: var(--error); }
+.tile.warning .num { color: var(--warning); }
+.tile.ok .num { color: var(--ok); }
+.verdict { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+.verdict.fail { background: var(--error-bg); color: var(--error); }
+.verdict.pass { background: var(--ok-bg); color: var(--ok); }
+.filters {
+  position: sticky; top: 0; z-index: 2; margin-top: 20px; padding: 12px 14px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+}
+.filters .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters .row + .row { margin-top: 10px; }
+.filters .caption { color: var(--muted); font-size: 12px; min-width: 64px; }
+button, input[type="search"] { font: inherit; color: inherit; }
+.chip {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px;
+  cursor: pointer; font-size: 13px;
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #06121f; font-weight: 600; }
+.chip .n { opacity: .75; margin-left: 5px; font-variant-numeric: tabular-nums; }
+input[type="search"] {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px;
+  min-width: 240px; flex: 1;
+}
+input[type="search"]:focus, .chip:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+label.check { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; cursor: pointer; }
+.showing { color: var(--muted); font-size: 13px; margin: 14px 0 8px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.table-wrap table tr:last-child td { border-bottom: 0; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--panel-2); }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.badge.error { background: var(--error-bg); color: var(--error); }
+.badge.warning { background: var(--warning-bg); color: var(--warning); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+details.invoice { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; }
+details.invoice > summary {
+  list-style: none; cursor: pointer; padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+}
+details.invoice > summary::-webkit-details-marker { display: none; }
+details.invoice > summary::before { content: "\25B8"; color: var(--muted); }
+details.invoice[open] > summary::before { content: "\25BE"; }
+details.invoice[open] > summary { border-bottom: 1px solid var(--line); }
+.inv-no { font-weight: 700; }
+.inv-meta { color: var(--muted); font-size: 13px; }
+.inv-badges { margin-left: auto; display: flex; gap: 6px; }
+.inv-body { padding: 12px 14px 14px; }
+.inv-body h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 6px; }
+.inv-body h3:first-child { margin-top: 0; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 18px; font-size: 13px; }
+.kv span { color: var(--muted); }
+.inner { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
+.inner table tr:last-child td { border-bottom: 0; }
+tr.has-error td:first-child { box-shadow: inset 3px 0 0 var(--error); }
+tr.has-warning td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
+.fix { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.value { overflow-wrap: anywhere; }
+.empty { padding: 28px; text-align: center; color: var(--muted); background: var(--panel); border: 1px dashed var(--line); border-radius: 8px; }
+footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+footer p { margin: 0 0 8px; }
+footer strong { color: var(--text); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>GST invoice check</h1>
+    <div class="meta">
+      Input <b class="mono">golden/input.csv</b> &middot; Config <b class="mono">golden/config.yml</b> &middot;
+      Financial year <b>2026-27</b> &middot; As of <b>2026-10-12</b> &middot; gst-invoice-checker TEST
+    </div>
+    <div class="notice" role="note"><strong>About GSTIN checks.</strong> Structurally valid only: the format and check character are correct. This does not prove the GSTIN is registered or active. Confirm it on the official GST portal.</div>
+    <div id="verdict"></div>
+  </header>
+
+  <noscript><div class="notice">This report needs JavaScript to show its tables. The same data is in report.json and issues.csv.</div></noscript>
+
+  <section class="tiles" id="tiles" aria-label="Counts"></section>
+
+  <h2>Issues by check</h2>
+  <div class="table-wrap">
+    <table id="checks">
+      <thead><tr><th>Check</th><th>Severity</th><th class="num">Count</th><th>What it means</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <section class="filters" aria-label="Filters">
+    <div class="row">
+      <span class="caption">Severity</span>
+      <span id="severity-chips"></span>
+      <span class="caption" style="margin-left:12px">View</span>
+      <span id="view-chips"></span>
+    </div>
+    <div class="row">
+      <span class="caption">Check ID</span>
+      <span id="check-chips" class="row" style="gap:6px"></span>
+    </div>
+    <div class="row">
+      <span class="caption">Search</span>
+      <input type="search" id="search" placeholder="Invoice number, GSTIN, name or message" aria-label="Search">
+      <label class="check"><input type="checkbox" id="only-issues" checked> Only invoices with issues</label>
+      <button type="button" class="chip" id="reset">Reset</button>
+    </div>
+  </section>
+
+  <div class="showing" id="showing" aria-live="polite"></div>
+  <section id="invoices" aria-label="Invoices"></section>
+  <section id="issues-view" hidden aria-label="All issues"></section>
+
+  <footer>
+    <p><strong>Disclaimer.</strong> This is an offline data-quality helper, not tax advice. It does not replace the GST portal, an accountant or e-invoice validation. A clean report means these structural checks passed; it does not mean an invoice is legally compliant.</p>
+    <p><strong>GSTINs.</strong> Structurally valid only: the format and check character are correct. This does not prove the GSTIN is registered or active. Confirm it on the official GST portal.</p>
+    <p>Generated offline by gst-invoice-checker TEST. This file is self-contained and makes no network requests. It contains your invoice data: share it with care.</p>
+  </footer>
+</div>
+
+<script id="report-data" type="application/json">{"tool":"gst-invoice-checker","tool_version":"TEST","as_of":"2026-10-12","input_file":"golden/input.csv","config_file":"golden/config.yml","financial_year":"2026-27","structural_notice":"Structurally valid only: the format and check character are correct. This does not prove the GSTIN is registered or active. Confirm it on the official GST portal.","disclaimer":"This is an offline data-quality helper, not tax advice. It does not replace the GST portal, an accountant or e-invoice validation. A clean report means these structural checks passed; it does not mean an invoice is legally compliant.","summary":{"lines":9,"invoices":8,"errors":7,"warnings":2,"lines_with_issues":6,"invoices_with_errors":5,"invoices_with_issues":6},"check_counts":[{"check_id":"GSTIN-006","severity":"error","title":"GSTIN check character does not match","count":1},{"check_id":"GSTIN-007","severity":"warning","title":"GSTIN has lower-case letters or surrounding spaces","count":1},{"check_id":"INV-002","severity":"error","title":"Invoice number has characters that are not allowed","count":1},{"check_id":"DATE-002","severity":"error","title":"Invoice date is in the future","count":1},{"check_id":"HSN-001","severity":"error","title":"HSN/SAC is not digits only","count":1},{"check_id":"TAX-001","severity":"error","title":"IGST charged on an intra-state supply","count":2},{"check_id":"MATH-001","severity":"error","title":"Tax amount does not equal taxable value x rate","count":1},{"check_id":"MATH-003","severity":"warning","title":"Taxable value does not equal quantity x unit price","count":1}],"invoices":[{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/001","invoice_date":"2026-07-15","buyer_gstin":"27PQRXS5678T1ZB","buyer_name":"Golden Buyer (FICTIONAL)","place_of_supply":"27","taxable_total":"1450.00","tax_total":"202.50","grand_total":"1652.50","errors":0,"warnings":0,"lines":[{"line_no":2,"description":"Golden widget","hsn_or_sac":"123456","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"90.00","sgst":"90.00","igst":"0.00","cess":"0.00","line_total":"1180.00"},{"line_no":3,"description":"Golden bolt","hsn_or_sac":"1234","quantity":"10","unit":"BOX","unit_price":"45.00","taxable_value":"450.00","rate":"5","cgst":"11.25","sgst":"11.25","igst":"0.00","cess":"0.00","line_total":"472.50"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/002","invoice_date":"2026-08-01","buyer_gstin":"","buyer_name":"","place_of_supply":"24","taxable_total":"2000.00","tax_total":"360.00","grand_total":"2360.00","errors":0,"warnings":0,"lines":[{"line_no":4,"description":"Golden service to an unregistered buyer","hsn_or_sac":"998877","quantity":"1","unit":"HRS","unit_price":"2000.00","taxable_value":"2000.00","rate":"18","cgst":"","sgst":"","igst":"360.00","cess":"","line_total":"2360.00"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/003","invoice_date":"2026-08-02","buyer_gstin":"27PQRXS5678T1ZA","buyer_name":"Golden Buyer (FICTIONAL)","place_of_supply":"27","taxable_total":"1000.00","tax_total":"180.00","grand_total":"1180.00","errors":1,"warnings":0,"lines":[{"line_no":5,"description":"Buyer GSTIN has a wrong check character","hsn_or_sac":"123456","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"90.00","sgst":"90.00","igst":"0.00","cess":"0.00","line_total":"1180.00"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/004","invoice_date":"2026-08-03","buyer_gstin":"27PQRXS5678T1ZB","buyer_name":"Golden Buyer (FICTIONAL)","place_of_supply":"27","taxable_total":"1000.00","tax_total":"180.00","grand_total":"1180.00","errors":1,"warnings":0,"lines":[{"line_no":6,"description":"IGST on an intra-state supply","hsn_or_sac":"123456","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"0.00","sgst":"0.00","igst":"180.00","cess":"0.00","line_total":"1180.00"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/005","invoice_date":"2026-08-04","buyer_gstin":"24LMNXO2468P1ZJ","buyer_name":"Other Buyer (FICTIONAL)","place_of_supply":"24","taxable_total":"1000.00","tax_total":"170.00","grand_total":"1170.00","errors":1,"warnings":0,"lines":[{"line_no":7,"description":"Tax is 10.00 short","hsn_or_sac":"123456","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"0.00","sgst":"0.00","igst":"170.00","cess":"0.00","line_total":"1170.00"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"G/26-27/006","invoice_date":"2026-08-05","buyer_gstin":"27PQRXS5678T1ZB","buyer_name":"Golden Buyer (FICTIONAL)","place_of_supply":"27","taxable_total":"1000.00","tax_total":"180.00","grand_total":"1180.00","errors":0,"warnings":2,"lines":[{"line_no":8,"description":"Warnings only: lower-case GSTIN and a discount","hsn_or_sac":"123456","quantity":"3","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"90.00","sgst":"90.00","igst":"0.00","cess":"0.00","line_total":"1180.00"}]},{"supplier_gstin":"27ABCXD1234E1ZY","supplier_name":"Golden Supplier (FICTIONAL)","invoice_no":"=1+1","invoice_date":"2026-12-25","buyer_gstin":"27PQRXS5678T1ZB","buyer_name":"Golden Buyer (FICTIONAL)","place_of_supply":"27","taxable_total":"1000.00","tax_total":"180.00","grand_total":"1180.00","errors":3,"warnings":0,"lines":[{"line_no":9,"description":"\u003cscript\u003ealert(\"x\")\u003c/script\u003e \u0026 'quotes', {{TOOL}}","hsn_or_sac":"84A1","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"90.00","sgst":"90.00","igst":"0.00","cess":"0.00","line_total":"1180.00"}]},{"supplier_gstin":"04GHIXJ1357K1ZR","supplier_name":"Territory Supplier (FICTIONAL)","invoice_no":"G/26-27/008","invoice_date":"2026-09-01","buyer_gstin":"04RSTXU9753V1Z5","buyer_name":"Territory Buyer (FICTIONAL)","place_of_supply":"04","taxable_total":"1000.00","tax_total":"180.00","grand_total":"1180.00","errors":1,"warnings":0,"lines":[{"line_no":10,"description":"IGST inside a UTGST territory","hsn_or_sac":"123456","quantity":"2","unit":"NOS","unit_price":"500.00","taxable_value":"1000.00","rate":"18","cgst":"0.00","sgst":"0.00","igst":"180.00","cess":"0.00","line_total":"1180.00"}]}],"issues":[{"line_no":5,"invoice_no":"G/26-27/003","supplier_gstin":"27ABCXD1234E1ZY","check_id":"GSTIN-006","severity":"error","field":"buyer_gstin","value":"27PQRXS5678T1ZA","message":"The check character is 'A' but the first 14 characters give 'B'. One or more characters are probably mistyped.","suggested_fix":"Re-enter the whole GSTIN from the source document. Do not just change the last character: the mistake is usually somewhere in the first 14."},{"line_no":6,"invoice_no":"G/26-27/004","supplier_gstin":"27ABCXD1234E1ZY","check_id":"TAX-001","severity":"error","field":"igst","value":"cgst=0.00, sgst=0.00, igst=180.00","message":"IGST is charged but the supply is intra-state (supplier state 27 Maharashtra, place of supply 27 Maharashtra).","suggested_fix":"Charge CGST + SGST in equal halves, or correct the place of supply. SEZ and export supplies are not modelled by this tool."},{"line_no":7,"invoice_no":"G/26-27/005","supplier_gstin":"27ABCXD1234E1ZY","check_id":"MATH-001","severity":"error","field":"rate","value":"170.00","message":"Tax charged is 170.00 but 1000.00 x 18% is 180.00 (difference 10.00, tolerance 0.01).","suggested_fix":"Recalculate the tax, or correct the rate or taxable value. If your invoices round tax differently, raise tolerance.tax_amount in the config."},{"line_no":8,"invoice_no":"G/26-27/006","supplier_gstin":"27ABCXD1234E1ZY","check_id":"GSTIN-007","severity":"warning","field":"buyer_gstin","value":"27pqrxs5678t1zb","message":"The GSTIN has lower-case letters or surrounding spaces. It was checked as '27PQRXS5678T1ZB'.","suggested_fix":"Store GSTINs in upper case with no spaces."},{"line_no":8,"invoice_no":"G/26-27/006","supplier_gstin":"27ABCXD1234E1ZY","check_id":"MATH-003","severity":"warning","field":"taxable_value","value":"1000.00","message":"Taxable value is 1000.00 but 3 x 500.00 is 1500.00.","suggested_fix":"Check quantity, unit price and taxable value. If the difference is a discount, this warning can be ignored or MATH-003 disabled in the config."},{"line_no":9,"invoice_no":"=1+1","supplier_gstin":"27ABCXD1234E1ZY","check_id":"DATE-002","severity":"error","field":"invoice_date","value":"2026-12-25","message":"The invoice date 2026-12-25 is after 2026-10-12.","suggested_fix":"Check the year and whether day and month are swapped."},{"line_no":9,"invoice_no":"=1+1","supplier_gstin":"27ABCXD1234E1ZY","check_id":"HSN-001","severity":"error","field":"hsn_or_sac","value":"84A1","message":"The HSN/SAC code '84A1' contains something other than digits.","suggested_fix":"Enter the code as digits only, with no spaces, dots or letters."},{"line_no":9,"invoice_no":"=1+1","supplier_gstin":"27ABCXD1234E1ZY","check_id":"INV-002","severity":"error","field":"invoice_no","value":"=1+1","message":"The invoice number contains characters that are not allowed: '=', '+'.","suggested_fix":"Use only letters, digits, '/' and '-' in invoice numbers."},{"line_no":10,"invoice_no":"G/26-27/008","supplier_gstin":"04GHIXJ1357K1ZR","check_id":"TAX-001","severity":"error","field":"igst","value":"cgst=0.00, sgst=0.00, igst=180.00","message":"IGST is charged but the supply is intra-state (supplier state 04 Chandigarh, place of supply 04 Chandigarh).","suggested_fix":"Charge CGST + UTGST in equal halves (enter UTGST in the sgst column), or correct the place of supply. SEZ and export supplies are not modelled by this tool."}]}</script>
+<script>
+(function () {
+  'use strict';
+
+  var data = JSON.parse(document.getElementById('report-data').textContent);
+  var state = { severity: 'all', checks: {}, query: '', onlyIssues: true, view: 'invoices' };
+
+  // Everything from the report data goes through textContent, never innerHTML.
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) { node.className = className; }
+    if (text !== undefined && text !== null) { node.textContent = String(text); }
+    return node;
+  }
+  function clear(node) { while (node.firstChild) { node.removeChild(node.firstChild); } }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  var issuesByLine = {};
+  data.issues.forEach(function (issue) {
+    (issuesByLine[issue.line_no] = issuesByLine[issue.line_no] || []).push(issue);
+  });
+
+  function checksSelected() { return Object.keys(state.checks).length > 0; }
+  function filtersNarrow() { return state.severity !== 'all' || checksSelected(); }
+  function issueMatches(issue) {
+    if (state.severity !== 'all' && issue.severity !== state.severity) { return false; }
+    if (checksSelected() && !state.checks[issue.check_id]) { return false; }
+    return true;
+  }
+  function contains(text, query) { return String(text || '').toLowerCase().indexOf(query) !== -1; }
+  function invoiceIssues(invoice) {
+    var found = [];
+    invoice.lines.forEach(function (line) {
+      (issuesByLine[line.line_no] || []).forEach(function (issue) {
+        if (issueMatches(issue)) { found.push(issue); }
+      });
+    });
+    return found;
+  }
+  function invoiceMatchesQuery(invoice, issues) {
+    var q = state.query;
+    if (!q) { return true; }
+    if (contains(invoice.invoice_no, q) || contains(invoice.supplier_gstin, q) || contains(invoice.buyer_gstin, q) ||
+        contains(invoice.supplier_name, q) || contains(invoice.buyer_name, q)) { return true; }
+    return issues.some(function (issue) { return contains(issue.message, q) || contains(issue.check_id, q); });
+  }
+  function issueMatchesQuery(issue) {
+    var q = state.query;
+    return !q || contains(issue.invoice_no, q) || contains(issue.supplier_gstin, q) || contains(issue.message, q) ||
+        contains(issue.check_id, q) || contains(issue.value, q);
+  }
+
+  function badge(kind, text) { return el('span', 'badge ' + kind, text); }
+  function cells(row, values, numericFrom) {
+    values.forEach(function (value, index) {
+      var cell = el('td', null, value);
+      if (numericFrom !== undefined && index >= numericFrom) { cell.className = 'num'; }
+      row.appendChild(cell);
+    });
+  }
+  function headerRow(labels, numericFrom) {
+    var row = el('tr');
+    labels.forEach(function (label, index) {
+      var cell = el('th', null, label);
+      if (numericFrom !== undefined && index >= numericFrom) { cell.className = 'num'; }
+      row.appendChild(cell);
+    });
+    var head = el('thead');
+    head.appendChild(row);
+    return head;
+  }
+
+  function renderTiles() {
+    var s = data.summary;
+    var tiles = [
+      ['', s.lines, 'Lines checked'],
+      ['', s.invoices, 'Invoices'],
+      [s.invoices_with_errors ? 'error' : 'ok', s.invoices_with_errors, 'Invoices with errors'],
+      [s.errors ? 'error' : 'ok', s.errors, 'Errors'],
+      [s.warnings ? 'warning' : 'ok', s.warnings, 'Warnings']
+    ];
+    var host = document.getElementById('tiles');
+    tiles.forEach(function (t) {
+      var tile = el('div', 'tile ' + t[0]);
+      tile.appendChild(el('div', 'num', t[1]));
+      tile.appendChild(el('div', 'label', t[2]));
+      host.appendChild(tile);
+    });
+    var verdict = document.getElementById('verdict');
+    verdict.appendChild(s.errors
+      ? el('span', 'verdict fail', 'FAILED: ' + plural(s.errors, 'error'))
+      : el('span', 'verdict pass', 'PASSED: no errors'));
+  }
+
+  function renderChecksTable() {
+    var body = document.querySelector('#checks tbody');
+    clear(body);
+    if (!data.check_counts.length) {
+      var row = el('tr');
+      var cell = el('td', null, 'No issues found.');
+      cell.colSpan = 4;
+      row.appendChild(cell);
+      body.appendChild(row);
+      return;
+    }
+    data.check_counts.forEach(function (check) {
+      var row = el('tr', 'clickable');
+      row.title = 'Filter by ' + check.check_id;
+      row.appendChild(el('td', 'mono', check.check_id));
+      var severity = el('td');
+      severity.appendChild(badge(check.severity, check.severity));
+      row.appendChild(severity);
+      row.appendChild(el('td', 'num', check.count));
+      row.appendChild(el('td', null, check.title));
+      row.addEventListener('click', function () { toggleCheck(check.check_id); });
+      body.appendChild(row);
+    });
+  }
+
+  function chip(label, pressed, onClick, count) {
+    var button = el('button', 'chip', label);
+    button.type = 'button';
+    button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    if (count !== undefined) { button.appendChild(el('span', 'n', count)); }
+    button.addEventListener('click', onClick);
+    return button;
+  }
+  function renderChips() {
+    var severity = document.getElementById('severity-chips');
+    clear(severity);
+    [['all', 'All', data.summary.errors + data.summary.warnings], ['error', 'Errors', data.summary.errors],
+     ['warning', 'Warnings', data.summary.warnings]].forEach(function (option) {
+      severity.appendChild(chip(option[1], state.severity === option[0], function () {
+        state.severity = option[0]; update();
+      }, option[2]));
+      severity.appendChild(document.createTextNode(' '));
+    });
+    var view = document.getElementById('view-chips');
+    clear(view);
+    [['invoices', 'By invoice'], ['issues', 'All issues']].forEach(function (option) {
+      view.appendChild(chip(option[1], state.view === option[0], function () { state.view = option[0]; update(); }));
+      view.appendChild(document.createTextNode(' '));
+    });
+    var checks = document.getElementById('check-chips');
+    clear(checks);
+    if (!data.check_counts.length) { checks.appendChild(el('span', 'inv-meta', 'No checks fired.')); }
+    data.check_counts.forEach(function (check) {
+      checks.appendChild(chip(check.check_id, !!state.checks[check.check_id], function () {
+        toggleCheck(check.check_id);
+      }, check.count));
+    });
+  }
+  function toggleCheck(id) {
+    if (state.checks[id]) { delete state.checks[id]; } else { state.checks[id] = true; }
+    update();
+  }
+
+  function issueTable(issues, withInvoice) {
+    var table = el('table');
+    table.appendChild(headerRow(withInvoice
+      ? ['Row', 'Invoice', 'Check', 'Severity', 'Field', 'Value', 'What is wrong and how to fix it']
+      : ['Row', 'Check', 'Severity', 'Field', 'Value', 'What is wrong and how to fix it']));
+    var body = el('tbody');
+    issues.forEach(function (issue) {
+      var row = el('tr', issue.severity === 'error' ? 'has-error' : 'has-warning');
+      row.appendChild(el('td', 'num', issue.line_no));
+      if (withInvoice) { row.appendChild(el('td', 'mono', issue.invoice_no || '(none)')); }
+      row.appendChild(el('td', 'mono', issue.check_id));
+      var severity = el('td');
+      severity.appendChild(badge(issue.severity, issue.severity));
+      row.appendChild(severity);
+      row.appendChild(el('td', 'mono', issue.field));
+      row.appendChild(el('td', 'mono value', issue.value));
+      var message = el('td');
+      message.appendChild(el('div', null, issue.message));
+      message.appendChild(el('div', 'fix', 'Fix: ' + issue.suggested_fix));
+      row.appendChild(message);
+      body.appendChild(row);
+    });
+    table.appendChild(body);
+    return table;
+  }
+
+  function invoiceBody(invoice, issues) {
+    var body = el('div', 'inv-body');
+    body.appendChild(el('h3', null, 'Invoice'));
+    var kv = el('div', 'kv');
+    [['Supplier', (invoice.supplier_name ? invoice.supplier_name + ' ' : '') + (invoice.supplier_gstin || '(no GSTIN)')],
+     ['Buyer', (invoice.buyer_name ? invoice.buyer_name + ' ' : '') + (invoice.buyer_gstin || '(unregistered buyer)')],
+     ['Date', invoice.invoice_date || '(none)'],
+     ['Place of supply', invoice.place_of_supply || '(none)'],
+     ['Taxable total', invoice.taxable_total],
+     ['Tax + cess total', invoice.tax_total],
+     ['Invoice total', invoice.grand_total]].forEach(function (pair) {
+      var item = el('div');
+      item.appendChild(el('span', null, pair[0] + ': '));
+      item.appendChild(document.createTextNode(pair[1]));
+      kv.appendChild(item);
+    });
+    body.appendChild(kv);
+
+    body.appendChild(el('h3', null, 'Issues (' + issues.length + (filtersNarrow() ? ', filtered' : '') + ')'));
+    if (issues.length) {
+      var issueWrap = el('div', 'inner');
+      issueWrap.appendChild(issueTable(issues, false));
+      body.appendChild(issueWrap);
+    } else {
+      body.appendChild(el('div', 'inv-meta', filtersNarrow() ? 'No issues match the current filters.' : 'No issues on this invoice.'));
+    }
+
+    body.appendChild(el('h3', null, 'Lines (' + invoice.lines.length + ')'));
+    var lineWrap = el('div', 'inner');
+    var table = el('table');
+    table.appendChild(headerRow(['Row', 'Description', 'HSN/SAC', 'Qty', 'Unit price', 'Taxable', 'Rate %', 'CGST',
+      'SGST', 'IGST', 'Cess', 'Total'], 3));
+    var rows = el('tbody');
+    invoice.lines.forEach(function (line) {
+      var lineIssues = issuesByLine[line.line_no] || [];
+      var row = el('tr');
+      if (lineIssues.some(function (i) { return i.severity === 'error'; })) { row.className = 'has-error'; }
+      else if (lineIssues.length) { row.className = 'has-warning'; }
+      cells(row, [line.line_no, line.description, line.hsn_or_sac,
+        line.quantity + (line.unit ? ' ' + line.unit : ''), line.unit_price, line.taxable_value, line.rate,
+        line.cgst, line.sgst, line.igst, line.cess, line.line_total], 3);
+      rows.appendChild(row);
+    });
+    table.appendChild(rows);
+    lineWrap.appendChild(table);
+    body.appendChild(lineWrap);
+    return body;
+  }
+
+  function renderInvoices() {
+    var host = document.getElementById('invoices');
+    clear(host);
+    var shown = 0;
+    var shownIssues = 0;
+    data.invoices.forEach(function (invoice) {
+      var issues = invoiceIssues(invoice);
+      if ((state.onlyIssues || filtersNarrow()) && !issues.length) { return; }
+      if (!invoiceMatchesQuery(invoice, issues)) { return; }
+      shown++;
+      shownIssues += issues.length;
+
+      var details = el('details', 'invoice');
+      var summary = el('summary');
+      summary.appendChild(el('span', 'inv-no mono', invoice.invoice_no || '(no invoice number)'));
+      summary.appendChild(el('span', 'inv-meta', invoice.invoice_date || '(no date)'));
+      summary.appendChild(el('span', 'inv-meta mono', invoice.supplier_gstin || '(no supplier GSTIN)'));
+      if (invoice.supplier_name) { summary.appendChild(el('span', 'inv-meta', invoice.supplier_name)); }
+      summary.appendChild(el('span', 'inv-meta', plural(invoice.lines.length, 'line') + ' · total ' + invoice.grand_total));
+      var badges = el('span', 'inv-badges');
+      var errors = issues.filter(function (i) { return i.severity === 'error'; }).length;
+      var warnings = issues.length - errors;
+      if (errors) { badges.appendChild(badge('error', plural(errors, 'error'))); }
+      if (warnings) { badges.appendChild(badge('warning', plural(warnings, 'warning'))); }
+      if (!issues.length) { badges.appendChild(badge('ok', 'no issues')); }
+      summary.appendChild(badges);
+      details.appendChild(summary);
+      // The body is built the first time an invoice is opened, which keeps large reports quick.
+      details.addEventListener('toggle', function () {
+        if (details.open && details.childNodes.length === 1) { details.appendChild(invoiceBody(invoice, issues)); }
+      });
+      host.appendChild(details);
+    });
+    if (!shown) { host.appendChild(el('div', 'empty', 'No invoices match the current filters.')); }
+    document.getElementById('showing').textContent =
+      'Showing ' + shown + ' of ' + plural(data.invoices.length, 'invoice') + ' and ' + plural(shownIssues, 'issue') +
+      '. Click an invoice to see its lines and issues.';
+  }
+
+  function renderIssues() {
+    var host = document.getElementById('issues-view');
+    clear(host);
+    var issues = data.issues.filter(function (issue) { return issueMatches(issue) && issueMatchesQuery(issue); });
+    if (!issues.length) {
+      host.appendChild(el('div', 'empty', 'No issues match the current filters.'));
+    } else {
+      var wrap = el('div', 'table-wrap');
+      wrap.appendChild(issueTable(issues, true));
+      host.appendChild(wrap);
+    }
+    document.getElementById('showing').textContent =
+      'Showing ' + issues.length + ' of ' + plural(data.issues.length, 'issue') + '.';
+  }
+
+  function update() {
+    renderChips();
+    var byInvoice = state.view === 'invoices';
+    document.getElementById('invoices').hidden = !byInvoice;
+    document.getElementById('issues-view').hidden = byInvoice;
+    if (byInvoice) { renderInvoices(); } else { renderIssues(); }
+  }
+
+  document.getElementById('search').addEventListener('input', function (event) {
+    state.query = event.target.value.trim().toLowerCase();
+    update();
+  });
+  document.getElementById('only-issues').addEventListener('change', function (event) {
+    state.onlyIssues = event.target.checked;
+    update();
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    state.severity = 'all'; state.checks = {}; state.query = ''; state.onlyIssues = true;
+    document.getElementById('search').value = '';
+    document.getElementById('only-issues').checked = true;
+    update();
+  });
+
+  renderTiles();
+  renderChecksTable();
+  update();
+})();
+</script>
+</body>
+</html>
