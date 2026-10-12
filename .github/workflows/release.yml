@@ -1,0 +1,48 @@
+name: Release
+
+# Pushing a tag such as v0.1.0 builds the JAR and attaches it to a GitHub release.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish the JAR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Check the tag matches the version in pom.xml
+        run: |
+          version=$(./mvnw -q -ntp help:evaluate -Dexpression=project.version -DforceStdout | tail -n 1)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pom.xml version $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Build, test, check formatting, run static analysis
+        run: ./mvnw -B -ntp verify
+
+      - name: Create the release and attach the JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd target
+          jar="gst-invoice-checker-$VERSION.jar"
+          sha256sum "$jar" > "$jar.sha256"
+          gh release create "$GITHUB_REF_NAME" "$jar" "$jar.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "gst-invoice-checker $VERSION" \
+            --generate-notes \
+            --verify-tag
