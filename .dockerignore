@@ -1,0 +1,12 @@
+.git
+.github
+.claude
+.idea
+.vscode
+target
+reports
+docs
+sample
+*.md
+*.csv
+.jqwik-database
